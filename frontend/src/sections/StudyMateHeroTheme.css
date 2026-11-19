@@ -1,0 +1,100 @@
+.study-hero__eyebrow {
+  color: #fff;
+}
+
+.study-hero__eyebrow span {
+  background: #000;
+  box-shadow: none;
+}
+
+.study-hero__title-line--accent {
+  color: #fff;
+}
+
+.study-hero__title--interactive {
+  perspective: 1000px;
+}
+
+.study-hero__name-tilt {
+  display: inline-block;
+  max-width: 100%;
+  transform: rotateX(var(--name-tilt-x, 0deg)) rotateY(var(--name-tilt-y, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.study-hero__name-rotation {
+  display: inline-block;
+  max-width: 100%;
+  transform-style: preserve-3d;
+}
+
+.study-hero__name-rotation.is-rotating {
+  animation: study-hero-name-rotation 1.35s cubic-bezier(0.22, 0.72, 0.2, 1) both;
+}
+
+.study-hero__title--interactive .study-hero__title-character {
+  white-space: normal;
+}
+
+.study-hero__heading {
+  font-size: clamp(3.25rem, 5.5vw, 6rem);
+}
+
+.study-hero__copy {
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
+  line-height: 1.7;
+}
+
+.study-hero__eyebrow,
+.study-hero__prompt {
+  font-size: 1rem;
+}
+
+.study-hero .study-hero__copy {
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
+}
+
+.study-hero__actions a {
+  font-size: 1rem;
+  background: #000;
+  color: #000;
+}
+
+.study-hero__actions a:hover {
+  background: #000;
+  color: #000;
+}
+
+.study-hero__actions a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+.study-hero__prompt i {
+  background: #000;
+}
+
+.study-hero__scroll span {
+  border-color: #fff;
+}
+
+@keyframes study-hero-name-rotation {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-hero__name-tilt {
+    transform: none;
+  }
+
+  .study-hero__name-rotation.is-rotating {
+    animation-duration: 0.01ms;
+  }
+}

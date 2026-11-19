@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Type / Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,650&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0c;
+  --ink:#f3f1ea;
+  --ink-dim:rgba(243,241,234,0.22);
+  --accent:#c9b79c;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:auto;} /* JS drives smooth motion; native smooth stays off to avoid fighting rAF-based effects */
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sora',-apple-system,BlinkMacSystemFont,sans-serif;
+  overflow-x:hidden;
+}
+
+/* ---- static atmospheric background (never animated) ------------------ */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(255,255,255,0.05), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(0,0,0,0.6), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 64px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 64px);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- control panel ------------------------------------------------------*/
+.panel{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-dim);
+  background:linear-gradient(to bottom, rgba(10,10,12,0.85), transparent);
+  pointer-events:none;
+}
+.panel *{pointer-events:auto;}
+.panel-title{color:var(--ink);opacity:.85;font-weight:600;}
+.panel-controls{display:flex;gap:10px;align-items:center;}
+.panel button{
+  background:transparent;border:1px solid rgba(243,241,234,0.25);color:var(--ink);
+  font:inherit;letter-spacing:.08em;text-transform:uppercase;font-size:.68rem;
+  padding:7px 12px;border-radius:2px;cursor:pointer;transition:border-color .3s var(--ease), color .3s var(--ease);
+}
+.panel button:hover{border-color:var(--ink);}
+.panel-indicator{color:var(--ink-dim);}
+.progress-track{position:fixed;top:0;left:0;height:2px;width:100%;background:rgba(255,255,255,0.06);z-index:51;}
+.progress-fill{height:100%;width:0%;background:var(--accent);transform-origin:left;}
+
+/* ---- intro -------------------------------------------------------------*/
+.intro{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;position:relative;z-index:1;padding:0 24px;
+}
+.intro h1{
+  font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2.6rem,7vw,5rem);
+  letter-spacing:-0.01em;margin:0 0 16px;
+}
+.intro p{color:var(--ink-dim);font-size:1rem;margin:0;letter-spacing:.02em;}
+
+/* ---- experiment shell ----------------------------------------------------*/
+section.experiment{
+  position:relative;z-index:1;min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:12vh 7vw;max-width:1400px;margin:0 auto;
+  border-top:1px solid rgba(243,241,234,0.06);
+  overflow:hidden;
+}
+.exp-label{
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  opacity:.75;margin-bottom:2.2rem;display:inline-block;
+}
+.exp-heading{
+  font-family:'Fraunces',serif;font-weight:600;
+  font-size:clamp(2.6rem,8.5vw,8.5rem);
+  line-height:0.98;letter-spacing:-0.015em;max-width:100%;
+}
+.exp-sub{color:var(--ink-dim);max-width:520px;margin-top:1.6rem;font-size:.95rem;}
+
+@media (max-width:640px){
+  section.experiment{padding:9vh 6vw;}
+  .exp-heading{font-size:clamp(2.1rem,11vw,4rem);}
+}
+
+/* =========================================================================
+   PER-EXPERIMENT STYLES
+   ========================================================================= */
+
+/* 01 Magnetic Character Field */
+#exp01 .exp-heading{position:relative;}
+.mchar{display:inline-block;transition:transform .15s linear;}
+
+/* 02 3D Typographic Tunnel */
+#exp02{perspective:1400px;}
+#exp02 .exp-heading{transform-style:preserve-3d;}
+.tword{display:inline-block;transform-style:preserve-3d;will-change:transform,filter,opacity;}
+
+/* 03 Liquid Typography Reveal */
+#exp03 .exp-heading{white-space:normal;}
+.lfrag{display:inline-block;will-change:transform,opacity;}
+
+/* 04 Character Gravity */
+.gchar{display:inline-block;will-change:transform,opacity,filter;}
+
+/* 05 Horizontal Scroll Typography */
+#exp05{overflow:hidden;}
+.marquee-track{white-space:nowrap;display:flex;gap:.5em;}
+.mqword{display:inline-block;will-change:transform;}
+
+/* 06 Velocity Typography */
+#exp06 .exp-heading{will-change:filter,letter-spacing,transform;transition:letter-spacing .25s var(--ease);}
+
+/* 07 Split / Reassemble */
+.split-char{position:relative;display:inline-block;}
+.split-char .layer{position:absolute;left:0;top:0;will-change:transform,opacity;}
+.split-char .layer.top{clip-path:inset(0 0 50% 0);}
+.split-char .layer.bottom{clip-path:inset(50% 0 0 0);}
+.split-char .ghost{visibility:hidden;}
+
+/* 08 Typographic Mask Reveal */
+#exp08 .mask-wrap{overflow:hidden;display:inline-block;}
+#exp08 .exp-heading{
+  clip-path:inset(0 calc((1 - var(--mask-progress,0)) * 100%) 0 0);
+}
+
+/* 09 Letter Flip Matrix */
+.fchar{display:inline-block;transition:transform .15s var(--ease);transform:rotateX(0);}
+.fchar.flip{transform:rotateX(85deg);}
+
+/* 10 Typographic Constellation */
+#exp10{position:relative;}
+.constellation-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.cchar{display:inline-block;will-change:transform,opacity,filter;position:relative;}
+
+/* 11 Word Morph */
+#exp11 .morph-col{position:relative;display:inline-block;overflow:hidden;height:1.1em;vertical-align:top;}
+#exp11 .morph-col span{position:absolute;left:0;top:0;will-change:transform,opacity;}
+#exp11 .morph-col .from{transform:translateY(0);opacity:1;}
+#exp11 .morph-col .to{transform:translateY(100%);opacity:0;}
+
+/* 12 Infinite Typographic Loop */
+#exp12{overflow:hidden;height:100vh;justify-content:center;}
+.loop-viewport{height:60vh;overflow:hidden;position:relative;width:100%;}
+.loop-track{position:absolute;left:0;top:0;width:100%;will-change:transform;}
+.loop-track .exp-heading{text-align:center;padding:0.3em 0;}
+
+/* 13 Scroll-Scrubbed Editorial Headline */
+#exp13 .exp-heading{
+  opacity:var(--scrub-opacity,0);
+  filter:blur(var(--scrub-blur,14px));
+  transform:translateY(var(--scrub-y,80px));
+  letter-spacing:var(--scrub-ls,0.15em);
+}
+
+/* 14 Words Through a Portal */
+#exp14{perspective:1200px;}
+.pword{display:inline-block;will-change:transform,opacity,filter;}
+
+/* 15 Draw -> Fill -> Transform */
+#exp15 svg{width:100%;height:auto;overflow:visible;}
+#exp15 text.draw-path{
+  font-family:'Fraunces',serif;font-weight:650;
+  fill:transparent;stroke:var(--ink);stroke-width:1px;
+  stroke-dasharray:2600;stroke-dashoffset:2600;
+  letter-spacing:0em;
+  transition:
+    stroke-dashoffset 1.7s var(--ease),
+    fill .6s ease-out 1.5s,
+    letter-spacing .7s var(--ease) 2.1s;
+}
+#exp15.is-visible text.draw-path{
+  stroke-dashoffset:0;fill:var(--ink);letter-spacing:.04em;
+}
+
+/* 16 Final Masterpiece */
+#exp16 .final-inner{will-change:transform,filter;}
+.zchar{display:inline-block;will-change:transform,opacity,filter;}
+
+/* ---- shared trigger-once utility classes -------------------------------*/
+[data-reveal]{opacity:0;transform:translateY(20px);filter:blur(4px);transition:opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease);}
+[data-reveal].is-visible{opacity:1;transform:translateY(0);filter:blur(0);}
+
+/* ---- accessibility -------------------------------------------------------*/
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    transition:none !important;animation:none !important;filter:none !important;
+  }
+  .mchar,.tword,.lfrag,.gchar,.mqword,.split-char .layer,.fchar,.cchar,.pword,.zchar,[data-reveal]{
+    transform:none !important;opacity:1 !important;
+  }
+  #exp08 .exp-heading{clip-path:none !important;}
+  #exp13 .exp-heading{opacity:1 !important;filter:none !important;transform:none !important;letter-spacing:normal !important;}
+  #exp15 text.draw-path{stroke-dashoffset:0 !important;fill:var(--ink) !important;}
+  .constellation-svg line{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div class="panel">
+  <span class="panel-title">Text Motion Lab</span>
+  <div class="panel-controls">
+    <button id="autoplayBtn">Auto Play</button>
+    <button id="resetBtn">Reset</button>
+    <span class="panel-indicator" id="expIndicator">Experiment 00 / 16</span>
+  </div>
+</div>
+
+<div class="intro">
+  <h1>Type / Motion Lab</h1>
+  <p>Scroll through the experiments.</p>
+</div>
+
+<!-- 01 — MAGNETIC CHARACTER FIELD -->
+<section class="experiment" id="exp01" data-exp="magnetic">
+  <span class="exp-label">01 — Magnetic Character Field</span>
+  <h2 class="exp-heading" data-split="magnetic">THINK DIFFERENTLY</h2>
+</section>
+
+<!-- 02 — 3D TYPOGRAPHIC TUNNEL -->
+<section class="experiment" id="exp02" data-exp="tunnel">
+  <span class="exp-label">02 — 3D Typographic Tunnel</span>
+  <h2 class="exp-heading" data-split="tunnel-words">ENTER THE FUTURE</h2>
+</section>
+
+<!-- 03 — LIQUID TYPOGRAPHY REVEAL -->
+<section class="experiment" id="exp03" data-exp="liquid">
+  <span class="exp-label">03 — Liquid Typography Reveal</span>
+  <h2 class="exp-heading" data-split="liquid">LEARN / CREATE / EXPLORE</h2>
+</section>
+
+<!-- 04 — CHARACTER GRAVITY -->
+<section class="experiment" id="exp04" data-exp="gravity">
+  <span class="exp-label">04 — Character Gravity</span>
+  <h2 class="exp-heading" data-split="gravity">KNOWLEDGE MOVES</h2>
+</section>
+
+<!-- 05 — HORIZONTAL SCROLL TYPOGRAPHY -->
+<section class="experiment" id="exp05" data-exp="marquee">
+  <span class="exp-label">05 — Horizontal Scroll Typography</span>
+  <div class="marquee-track" data-split="marquee">
+    <span class="exp-heading">YOUR IDEAS DESERVE TO MOVE</span>
+  </div>
+</section>
+
+<!-- 06 — VELOCITY TYPOGRAPHY -->
+<section class="experiment" id="exp06" data-exp="velocity">
+  <span class="exp-label">06 — Velocity Typography</span>
+  <h2 class="exp-heading">KEEP MOVING FORWARD</h2>
+</section>
+
+<!-- 07 — SPLIT / REASSEMBLE -->
+<section class="experiment" id="exp07" data-exp="split">
+  <span class="exp-label">07 — Split / Reassemble</span>
+  <h2 class="exp-heading" data-split="split">BUILD YOUR FUTURE</h2>
+</section>
+
+<!-- 08 — TYPOGRAPHIC MASK REVEAL -->
+<section class="experiment" id="exp08" data-exp="mask">
+  <span class="exp-label">08 — Typographic Mask Reveal</span>
+  <div class="mask-wrap"><h2 class="exp-heading">INTELLIGENCE, SIMPLIFIED</h2></div>
+</section>
+
+<!-- 09 — LETTER FLIP MATRIX -->
+<section class="experiment" id="exp09" data-exp="flip">
+  <span class="exp-label">09 — Letter Flip Matrix</span>
+  <h2 class="exp-heading" data-split="flip">CREATE SOMETHING GREAT</h2>
+</section>
+
+<!-- 10 — TYPOGRAPHIC CONSTELLATION -->
+<section class="experiment" id="exp10" data-exp="constellation">
+  <span class="exp-label">10 — Typographic Constellation</span>
+  <h2 class="exp-heading" data-split="constellation">IDEAS CONNECT</h2>
+  <svg class="constellation-svg"></svg>
+</section>
+
+<!-- 11 — WORD MORPH -->
+<section class="experiment" id="exp11" data-exp="morph">
+  <span class="exp-label">11 — Word Morph</span>
+  <h2 class="exp-heading" data-morph-from="LEARN FASTER" data-morph-to="UNDERSTAND DEEPER"></h2>
+</section>
+
+<!-- 12 — INFINITE TYPOGRAPHIC LOOP -->
+<section class="experiment" id="exp12" data-exp="loop">
+  <span class="exp-label">12 — Infinite Typographic Loop</span>
+  <div class="loop-viewport"><div class="loop-track" id="loopTrack"></div></div>
+</section>
+
+<!-- 13 — SCROLL-SCRUBBED EDITORIAL HEADLINE -->
+<section class="experiment" id="exp13" data-exp="scrub">
+  <span class="exp-label">13 — Scroll-Scrubbed Editorial Headline</span>
+  <h2 class="exp-heading">THE WAY YOU LEARN IS CHANGING</h2>
+</section>
+
+<!-- 14 — WORDS THROUGH A PORTAL -->
+<section class="experiment" id="exp14" data-exp="portal">
+  <span class="exp-label">14 — Words Through a Portal</span>
+  <h2 class="exp-heading" data-split="portal">WELCOME TO YOUR NEXT CHAPTER</h2>
+</section>
+
+<!-- 15 — DRAW -> FILL -> TRANSFORM -->
+<section class="experiment" id="exp15" data-exp="draw3">
+  <span class="exp-label">15 — Draw → Fill → Transform</span>
+  <svg viewBox="0 0 760 130" preserveAspectRatio="xMinYMid meet">
+    <text x="0" y="96" font-size="88" class="draw-path">MAKE IT MATTER</text>
+  </svg>
+</section>
+
+<!-- 16 — FINAL MASTERPIECE -->
+<section class="experiment" id="exp16" data-exp="final">
+  <span class="exp-label">16 — Final Masterpiece</span>
+  <div class="final-inner">
+    <h2 class="exp-heading" data-split="final">THE FUTURE OF TEXT</h2>
+  </div>
+</section>
+
+<div style="height:20vh;position:relative;z-index:1;"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   UTILITIES
+   ========================================================================= */
+const Util = {
+  lerp:(a,b,t)=>a+(b-a)*t,
+  clamp:(v,min,max)=>Math.min(Math.max(v,min),max),
+  mapRange:(v,inMin,inMax,outMin,outMax,doClamp=true)=>{
+    const t=(v-inMin)/(inMax-inMin);
+    const r=outMin+(outMax-outMin)*t;
+    return doClamp?Util.clamp(r,Math.min(outMin,outMax),Math.max(outMin,outMax)):r;
+  },
+  easeOut:(t)=>1-Math.pow(1-t,3),
+  splitChars(el){
+    const text=el.textContent;
+    el.innerHTML="";
+    const spans=[];
+    [...text].forEach((ch)=>{
+      const s=document.createElement("span");
+      s.textContent=ch===" "?"\u00A0":ch;
+      s.dataset.final=ch;
+      el.appendChild(s);
+      spans.push(s);
+    });
+    return spans;
+  },
+  splitWords(el,wrapClass){
+    const words=el.textContent.trim().split(/\s+/);
+    el.innerHTML=words.map(w=>`<span class="${wrapClass}">${w}</span>`).join(" ");
+    return [...el.querySelectorAll("."+wrapClass)];
+  },
+  progressForEl(rect,vh,startFrac=0.88,endFrac=0.3){
+    const center=rect.top+rect.height/2;
+    const start=vh*startFrac, end=vh*endFrac;
+    return Util.clamp((start-center)/(start-end),0,1);
+  }
+};
+
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const IS_TOUCH = matchMedia("(hover: none)").matches;
+const IS_MOBILE = window.innerWidth < 640;
+
+/* =========================================================================
+   ACCESSIBILITY MANAGER — bails out of every dynamic system if reduced
+   motion is requested. Final text stays real, selectable DOM text.
+   ========================================================================= */
+const AccessibilityManager = { reduced: REDUCED };
+
+/* =========================================================================
+   SCROLL / VELOCITY ENGINE — one rAF loop, shared by every experiment.
+   Only elements currently registered as "active" (via IntersectionObserver)
+   are recomputed each frame, so cost stays flat regardless of page length.
+   ========================================================================= */
+const ScrollEngine = {
+  velocity:0,
+  lastY:window.scrollY,
+  lastT:performance.now(),
+  activeScrubbers:new Set(),
+  register(fn){ this.activeScrubbers.add(fn); },
+  unregister(fn){ this.activeScrubbers.delete(fn); },
+  tick(now){
+    const dt=Math.max(now-this.lastT,1);
+    const dy=window.scrollY-this.lastY;
+    const rawV=(dy/dt)*16.6; // normalize to px/frame-ish units
+    this.velocity=Util.lerp(this.velocity,rawV,0.25);
+    if(Math.abs(dy)<0.5) this.velocity=Util.lerp(this.velocity,0,0.08);
+    this.lastY=window.scrollY;
+    this.lastT=now;
+
+    const vh=window.innerHeight;
+    this.activeScrubbers.forEach(fn=>fn(vh,this.velocity));
+
+    updateProgressBar();
+    updateExperimentIndicator(vh);
+
+    requestAnimationFrame(this.tick.bind(this));
+  },
+  start(){ requestAnimationFrame(this.tick.bind(this)); }
+};
+
+function updateProgressBar(){
+  const max=document.documentElement.scrollHeight-window.innerHeight;
+  const pct=max>0?(window.scrollY/max)*100:0;
+  const fill=document.getElementById("progressFill");
+  if(fill) fill.style.width=pct+"%";
+}
+
+let currentExpIndex=0;
+function updateExperimentIndicator(vh){
+  const sections=document.querySelectorAll("section.experiment");
+  let found=0;
+  sections.forEach((s,i)=>{
+    const r=s.getBoundingClientRect();
+    if(r.top<vh*0.5 && r.bottom>vh*0.5) found=i+1;
+  });
+  if(found!==currentExpIndex){
+    currentExpIndex=found;
+    const label=document.getElementById("expIndicator");
+    if(label) label.textContent=`Experiment ${String(found).padStart(2,"0")} / 16`;
+  }
+}
+
+/* =========================================================================
+   GENERIC "TRIGGER ONCE" OBSERVER
+   ========================================================================= */
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add("is-visible");
+      entry.target.dispatchEvent(new CustomEvent("reveal"));
+      revealObserver.unobserve(entry.target);
+    }
+  });
+},{threshold:0.25,rootMargin:"0px 0px -8% 0px"});
+
+/* Elements that stay "active" only while near/in view (for scrub effects) */
+function makeActivationObserver(onEnter,onLeave){
+  return new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting) onEnter(entry.target);
+      else onLeave && onLeave(entry.target);
+    });
+  },{threshold:0,rootMargin:"15% 0px 15% 0px"});
+}
+
+/* =========================================================================
+   01 — CHARACTER ANIMATOR: MAGNETIC FIELD
+   ========================================================================= */
+const CharacterAnimator = {
+  setupMagnetic(container){
+    const chars=Util.splitChars(container);
+    chars.forEach((c,i)=>{
+      c.classList.add("mchar");
+      const ry=Util.lerp(-36,36,Math.random());
+      const rot=Util.lerp(-10,10,Math.random());
+      c.style.transitionProperty="transform,opacity,filter";
+      c.style.transitionDuration="0.9s";
+      c.style.transitionTimingFunction="var(--ease)";
+      c.style.transitionDelay=(i*0.02)+"s";
+      c.style.opacity="0";
+      c.style.filter="blur(6px)";
+      c.style.transform=`translateY(${ry}px) rotate(${rot}deg) scale(0.9)`;
+      c._settled=false;
+    });
+    container.addEventListener("reveal",()=>{
+      chars.forEach(c=>{
+        c.style.opacity="1";
+        c.style.filter="blur(0)";
+        c.style.transform="translateY(0) rotate(0) scale(1)";
+      });
+      if(!IS_TOUCH && !AccessibilityManager.reduced){
+        setTimeout(()=>MouseInteraction.attach(container,chars),950);
+      }
+    },{once:true});
+  }
+};
+
+/* =========================================================================
+   MOUSE INTERACTION — subtle magnetic push, damped, disabled on touch.
+   ========================================================================= */
+const MouseInteraction = {
+  mouseX:-9999, mouseY:-9999,
+  attach(container,chars){
+    chars.forEach(c=>{
+      c.style.transitionProperty="filter"; // hand transform control to JS now
+      c._cur={x:0,y:0};
+    });
+    const radius= IS_MOBILE?0:70;
+    const strength= IS_MOBILE?0:7;
+    window.addEventListener("mousemove",(e)=>{
+      this.mouseX=e.clientX; this.mouseY=e.clientY;
+    },{passive:true});
+    function frame(){
+      if(!document.body.contains(container)) return;
+      chars.forEach(c=>{
+        const r=c.getBoundingClientRect();
+        const cx=r.left+r.width/2, cy=r.top+r.height/2;
+        const dx=cx-MouseInteraction.mouseX, dy=cy-MouseInteraction.mouseY;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        let tx=0, ty=0;
+        if(dist<radius && radius>0){
+          const f=(1-dist/radius)*strength;
+          const len=Math.max(dist,0.001);
+          tx=(dx/len)*f; ty=(dy/len)*f;
+        }
+        c._cur.x=Util.lerp(c._cur.x,tx,0.15);
+        c._cur.y=Util.lerp(c._cur.y,ty,0.15);
+        c.style.transform=`translate(${c._cur.x.toFixed(2)}px,${c._cur.y.toFixed(2)}px)`;
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+};
+
+/* =========================================================================
+   02 — 3D TYPOGRAPHIC TUNNEL (continuous scroll-scrub)
+   ========================================================================= */
+function setupTunnel(container){
+  const words=Util.splitWords(container,"tword");
+  function update(vh){
+    const rect=container.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.25);
+    words.forEach((w,i)=>{
+      const depth=Util.lerp(1,0,p)* (1+i*0.15);
+      w.style.transform=`translateZ(${-500*depth}px) rotateX(${18*depth}deg) scale(${1+depth*1.4})`;
+      w.style.filter=`blur(${10*depth}px)`;
+      w.style.opacity=Util.clamp(1-depth*0.9,0,1);
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(container.closest("section"));
+}
+
+/* =========================================================================
+   03 — LIQUID TYPOGRAPHY REVEAL (continuous scroll-scrub)
+   ========================================================================= */
+function setupLiquid(container){
+  const text=container.textContent;
+  container.innerHTML="";
+  const frags=[];
+  [...text].forEach((ch)=>{
+    const s=document.createElement("span");
+    s.className="lfrag";
+    s.textContent=ch===" "?"\u00A0":ch;
+    s.dataset.dir=Math.random()>0.5?1:-1;
+    s.dataset.mag=Util.lerp(30,90,Math.random());
+    s.dataset.skew=Util.lerp(4,10,Math.random());
+    container.appendChild(s);
+    frags.push(s);
+  });
+  function update(vh){
+    const rect=container.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.25);
+    frags.forEach(f=>{
+      const dir=parseFloat(f.dataset.dir), mag=parseFloat(f.dataset.mag), skew=parseFloat(f.dataset.skew);
+      const remain=1-p;
+      f.style.transform=`translateX(${dir*mag*remain}px) skewX(${dir*skew*remain}deg)`;
+      f.style.opacity=Util.clamp(p*1.3,0,1);
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(container.closest("section"));
+}
+
+/* =========================================================================
+   04 — CHARACTER GRAVITY (trigger once, damped fall, no bounce)
+   ========================================================================= */
+function setupGravity(container){
+  const chars=Util.splitChars(container);
+  chars.forEach((c,i)=>{
+    c.classList.add("gchar");
+    const jitter=Math.random()*120;
+    c.style.transitionProperty="transform,opacity,filter";
+    c.style.transitionDuration=(0.75+Math.random()*0.25)+"s";
+    c.style.transitionTimingFunction="var(--ease)";
+    c.style.transitionDelay=(i*0.045+jitter/1000)+"s";
+    c.style.opacity="0";
+    c.style.filter="blur(4px)";
+    c.style.transform=`translateY(-70px) rotate(${Util.lerp(-8,8,Math.random())}deg)`;
+  });
+  container.addEventListener("reveal",()=>{
+    chars.forEach(c=>{
+      c.style.opacity="1"; c.style.filter="blur(0)"; c.style.transform="translateY(0) rotate(0)";
+    });
+  },{once:true});
+}
+
+/* =========================================================================
+   05 — HORIZONTAL SCROLL TYPOGRAPHY (continuous, velocity-aware)
+   ========================================================================= */
+function setupMarquee(track){
+  const heading=track.querySelector(".exp-heading");
+  const words=Util.splitWords(heading,"mqword");
+  function update(vh,velocity){
+    const rect=track.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,1.0,0.0);
+    const centered=(p-0.5)*2; // -1 .. 1 across the section's traversal
+    words.forEach((w,i)=>{
+      const factor=1+ (i%3)*0.6;
+      const baseShift=centered * 60 * factor;
+      const skew=Util.clamp(velocity*0.4,-6,6);
+      w.style.transform=`translateX(${baseShift}px) skewX(${skew}deg)`;
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(track.closest("section"));
+}
+
+/* =========================================================================
+   06 — VELOCITY TYPOGRAPHY (continuous, driven by shared scroll velocity)
+   ========================================================================= */
+function setupVelocity(heading){
+  function update(vh,velocity){
+    const v=Math.abs(velocity);
+    const blur=Util.mapRange(v,0,45,0,3.5);
+    const spacing=Util.mapRange(v,0,45,0,0.05);
+    const stretch=1+Util.mapRange(v,0,45,0,0.035);
+    heading.style.filter=`blur(${blur.toFixed(2)}px)`;
+    heading.style.letterSpacing=spacing.toFixed(3)+"em";
+    heading.style.transform=`scaleX(${stretch.toFixed(3)})`;
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>{
+    ScrollEngine.unregister(update);
+    heading.style.filter=""; heading.style.letterSpacing=""; heading.style.transform="";
+  });
+  obs.observe(heading.closest("section"));
+}
+
+/* =========================================================================
+   07 — SPLIT / REASSEMBLE (continuous scroll-scrub)
+   ========================================================================= */
+function setupSplit(container){
+  const text=container.textContent;
+  container.innerHTML="";
+  const cells=[];
+  [...text].forEach(ch=>{
+    const wrap=document.createElement("span");
+    wrap.className="split-char";
+    const ghost=document.createElement("span");
+    ghost.className="ghost"; ghost.textContent=ch===" "?"\u00A0":ch;
+    const top=document.createElement("span");
+    top.className="layer top"; top.textContent=ch===" "?"\u00A0":ch;
+    const bottom=document.createElement("span");
+    bottom.className="layer bottom"; bottom.textContent=ch===" "?"\u00A0":ch;
+    wrap.appendChild(ghost); wrap.appendChild(top); wrap.appendChild(bottom);
+    container.appendChild(wrap);
+    cells.push({top,bottom});
+  });
+  function update(vh){
+    const rect=container.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.25);
+    const remain=1-p;
+    cells.forEach(({top,bottom})=>{
+      top.style.transform=`translateY(${-18*remain}px)`;
+      top.style.opacity=Util.clamp(0.4+p*0.6,0,1);
+      bottom.style.transform=`translateY(${18*remain}px)`;
+      bottom.style.opacity=Util.clamp(0.4+p*0.6,0,1);
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(container.closest("section"));
+}
+
+/* =========================================================================
+   08 — TYPOGRAPHIC MASK REVEAL (continuous scroll-scrub via CSS var)
+   ========================================================================= */
+function setupMask(section){
+  const heading=section.querySelector(".exp-heading");
+  function update(vh){
+    const rect=section.getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.2);
+    heading.style.setProperty("--mask-progress",p.toFixed(3));
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(section);
+}
+
+/* =========================================================================
+   09 — LETTER FLIP MATRIX (trigger once)
+   ========================================================================= */
+const FLIP_GLYPHS="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*".split("");
+function setupFlip(container){
+  const chars=Util.splitChars(container);
+  chars.forEach(c=>c.classList.add("fchar"));
+  container.addEventListener("reveal",()=>{
+    chars.forEach((span,i)=>{
+      const final=span.dataset.final;
+      if(final===" ") return;
+      const maxTicks=5+Math.floor(Math.random()*3);
+      let ticks=0;
+      setTimeout(function start(){
+        const iv=setInterval(()=>{
+          span.classList.add("flip");
+          span.textContent=FLIP_GLYPHS[Math.floor(Math.random()*FLIP_GLYPHS.length)];
+          setTimeout(()=>span.classList.remove("flip"),90);
+          ticks++;
+          if(ticks>=maxTicks){
+            clearInterval(iv);
+            span.textContent=final;
+          }
+        },95);
+      },i*35);
+    });
+  },{once:true});
+}
+
+/* =========================================================================
+   10 — TYPOGRAPHIC CONSTELLATION (trigger once + bounded connector-line loop)
+   ========================================================================= */
+function setupConstellation(container){
+  const section=container.closest("section");
+  const svg=section.querySelector(".constellation-svg");
+  const chars=Util.splitChars(container);
+  chars.forEach((c,i)=>{
+    c.classList.add("cchar");
+    c.style.transitionProperty="transform,opacity,filter";
+    c.style.transitionDuration="1.1s";
+    c.style.transitionTimingFunction="var(--ease)";
+    c.style.transitionDelay=(i*0.03)+"s";
+    c.style.opacity="0";
+    c.style.filter="blur(7px)";
+    const tx=Util.lerp(-140,140,Math.random());
+    const ty=Util.lerp(-90,90,Math.random());
+    const rot=Util.lerp(-20,20,Math.random());
+    c.style.transform=`translate(${tx}px,${ty}px) rotate(${rot}deg)`;
+  });
+  container.addEventListener("reveal",()=>{
+    chars.forEach(c=>{ c.style.opacity="1"; c.style.filter="blur(0)"; c.style.transform="translate(0,0) rotate(0)"; });
+    runConstellationLines(svg,chars);
+  },{once:true});
+}
+function runConstellationLines(svg,chars){
+  if(AccessibilityManager.reduced || chars.length<2) return;
+  const pairs=[];
+  for(let i=0;i<6;i++){
+    const a=chars[Math.floor(Math.random()*chars.length)];
+    const b=chars[Math.floor(Math.random()*chars.length)];
+    if(a!==b) pairs.push([a,b]);
+  }
+  const lines=pairs.map(()=>{
+    const l=document.createElementNS("http://www.w3.org/2000/svg","line");
+    l.setAttribute("stroke","var(--ink)");
+    l.setAttribute("stroke-width","0.6");
+    l.setAttribute("stroke-opacity","0");
+    svg.appendChild(l);
+    return l;
+  });
+  const duration=1300, start=performance.now();
+  function frame(now){
+    const t=Math.min((now-start)/duration,1);
+    const svgRect=svg.getBoundingClientRect();
+    pairs.forEach(([a,b],i)=>{
+      const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+      lines[i].setAttribute("x1",ra.left+ra.width/2-svgRect.left);
+      lines[i].setAttribute("y1",ra.top+ra.height/2-svgRect.top);
+      lines[i].setAttribute("x2",rb.left+rb.width/2-svgRect.left);
+      lines[i].setAttribute("y2",rb.top+rb.height/2-svgRect.top);
+      lines[i].setAttribute("stroke-opacity",(Math.sin(t*Math.PI)*0.35).toFixed(3));
+    });
+    if(t<1) requestAnimationFrame(frame); else lines.forEach(l=>l.remove());
+  }
+  requestAnimationFrame(frame);
+}
+
+/* =========================================================================
+   11 — WORD MORPH (continuous scroll-scrub, character-column crossfade)
+   Shared characters at the same column stay put; differing ones flip
+   between an old/new layer. This avoids a plain crossfade while staying
+   lightweight (no true glyph-path morphing).
+   ========================================================================= */
+function setupMorph(heading){
+  const from=heading.dataset.morphFrom, to=heading.dataset.morphTo;
+  const len=Math.max(from.length,to.length);
+  const cols=[];
+  heading.innerHTML="";
+  for(let i=0;i<len;i++){
+    const a=from[i]||"", b=to[i]||"";
+    const col=document.createElement("span");
+    col.className="morph-col";
+    col.style.width=(a===" "||b===" ")?"0.35em":"auto";
+    if(a===b){
+      col.textContent=a===" "?"\u00A0":a||"\u00A0";
+      col.style.position="static";col.style.overflow="visible";col.style.height="auto";
+    } else {
+      const spanA=document.createElement("span"); spanA.className="from"; spanA.textContent=a?(a===" "?"\u00A0":a):"";
+      const spanB=document.createElement("span"); spanB.className="to"; spanB.textContent=b?(b===" "?"\u00A0":b):"";
+      col.appendChild(spanA); col.appendChild(spanB);
+    }
+    heading.appendChild(col);
+    cols.push({col,a,b,changed:a!==b});
+  }
+  function update(vh){
+    const rect=heading.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.25);
+    cols.forEach(({col,changed})=>{
+      if(!changed) return;
+      const from=col.querySelector(".from"), to=col.querySelector(".to");
+      from.style.transform=`translateY(${-100*p}%)`;
+      from.style.opacity=1-p;
+      to.style.transform=`translateY(${100*(1-p)}%)`;
+      to.style.opacity=p;
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(heading.closest("section"));
+}
+
+/* =========================================================================
+   12 — INFINITE TYPOGRAPHIC LOOP (continuous, seamless recycle)
+   ========================================================================= */
+function setupLoop(track){
+  const words=["STUDY","CREATE","DISCOVER"];
+  const makeSet=()=>words.map(w=>`<div class="exp-heading">${w}</div>`).join("");
+  track.innerHTML=makeSet()+makeSet(); // duplicate for seamless wrap
+  let setHeight=0;
+  function measure(){ setHeight=track.scrollHeight/2; }
+  window.addEventListener("resize",measure);
+  measure();
+  function update(){
+    const offset=((window.scrollY*0.4) % setHeight + setHeight) % setHeight;
+    track.style.transform=`translateY(${-offset}px)`;
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(track.closest("section"));
+}
+
+/* =========================================================================
+   13 — SCROLL-SCRUBBED EDITORIAL HEADLINE (continuous, reversible)
+   ========================================================================= */
+function setupScrub13(heading){
+  function update(vh){
+    const rect=heading.closest("section").getBoundingClientRect();
+    const center=rect.top+rect.height/2;
+    // signed progress: -1 approaching, 0 centered, +1 exiting past top
+    const p=Util.clamp(Util.mapRange(center,vh*0.95,vh*0.05,-1,1,false),-1,1.4);
+    let opacity,blur,y,ls;
+    if(p<=0){
+      const t=Util.easeOut(Util.clamp(p+1,0,1));
+      opacity=t; blur=Util.lerp(14,0,t); y=Util.lerp(80,0,t); ls=Util.lerp(0.15,0,t);
+    } else {
+      const t=Util.clamp(p,0,1);
+      opacity=Util.lerp(1,0.82,t); blur=Util.lerp(0,1.2,t); y=Util.lerp(0,-10,t); ls=0;
+    }
+    heading.style.setProperty("--scrub-opacity",opacity.toFixed(3));
+    heading.style.setProperty("--scrub-blur",blur.toFixed(2)+"px");
+    heading.style.setProperty("--scrub-y",y.toFixed(2)+"px");
+    heading.style.setProperty("--scrub-ls",ls.toFixed(3)+"em");
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(heading.closest("section"));
+}
+
+/* =========================================================================
+   14 — WORDS THROUGH A PORTAL (continuous scroll-scrub)
+   ========================================================================= */
+function setupPortal(container){
+  const words=Util.splitWords(container,"pword");
+  words.forEach(w=>{ w.dataset.depth=Util.lerp(0.4,1.5,Math.random()).toFixed(2); });
+  function update(vh){
+    const rect=container.closest("section").getBoundingClientRect();
+    const p=Util.progressForEl(rect,vh,0.95,0.25);
+    words.forEach(w=>{
+      const depth=parseFloat(w.dataset.depth);
+      const scale=Util.lerp(1+depth*0.9,1,p);
+      const blur=Util.lerp(depth*8,0,p);
+      w.style.transform=`scale(${scale.toFixed(3)})`;
+      w.style.filter=`blur(${blur.toFixed(2)}px)`;
+      w.style.opacity=Util.clamp(p*1.2,0,1);
+    });
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>ScrollEngine.unregister(update));
+  obs.observe(container.closest("section"));
+}
+
+/* =========================================================================
+   16 — FINAL MASTERPIECE: gravity entrance + shared velocity + subtle
+   mouse parallax on the container, combining several systems with
+   restraint.
+   ========================================================================= */
+function setupFinal(container){
+  const chars=Util.splitChars(container);
+  chars.forEach((c,i)=>{
+    c.classList.add("zchar");
+    c.style.transitionProperty="transform,opacity,filter";
+    c.style.transitionDuration="0.85s";
+    c.style.transitionTimingFunction="var(--ease)";
+    c.style.transitionDelay=(i*0.035)+"s";
+    c.style.opacity="0"; c.style.filter="blur(5px)";
+    c.style.transform=`translateY(${Util.lerp(-40,40,Math.random())}px)`;
+  });
+  container.addEventListener("reveal",()=>{
+    chars.forEach(c=>{ c.style.opacity="1"; c.style.filter="blur(0)"; c.style.transform="translateY(0)"; });
+  },{once:true});
+
+  const inner=container.closest("section").querySelector(".final-inner");
+  let mx=0,my=0;
+  if(!IS_TOUCH){
+    window.addEventListener("mousemove",(e)=>{
+      const vw=window.innerWidth, vh=window.innerHeight;
+      mx=(e.clientX/vw-0.5)*8;
+      my=(e.clientY/vh-0.5)*6;
+    },{passive:true});
+  }
+  function update(vh,velocity){
+    const skew=Util.clamp(velocity*0.25,-4,4);
+    inner.style.transform=`translate(${mx.toFixed(2)}px,${my.toFixed(2)}px) skewX(${skew.toFixed(2)}deg)`;
+  }
+  const obs=makeActivationObserver(()=>ScrollEngine.register(update),()=>{
+    ScrollEngine.unregister(update); inner.style.transform="";
+  });
+  obs.observe(container.closest("section"));
+}
+
+/* =========================================================================
+   WIRING — attach every experiment's setup function
+   ========================================================================= */
+function initAll(){
+  document.querySelectorAll('[data-split="magnetic"]').forEach(CharacterAnimator.setupMagnetic);
+  document.querySelectorAll('[data-split="tunnel-words"]').forEach(setupTunnel);
+  document.querySelectorAll('[data-split="liquid"]').forEach(setupLiquid);
+  document.querySelectorAll('[data-split="gravity"]').forEach(setupGravity);
+  document.querySelectorAll('[data-split="marquee"]').forEach(setupMarquee);
+  document.querySelectorAll('#exp06 .exp-heading').forEach(setupVelocity);
+  document.querySelectorAll('[data-split="split"]').forEach(setupSplit);
+  document.querySelectorAll('#exp08').forEach(setupMask);
+  document.querySelectorAll('[data-split="flip"]').forEach(setupFlip);
+  document.querySelectorAll('[data-split="constellation"]').forEach(setupConstellation);
+  document.querySelectorAll('#exp11 .exp-heading').forEach(setupMorph);
+  document.querySelectorAll('#loopTrack').forEach(setupLoop);
+  document.querySelectorAll('#exp13 .exp-heading').forEach(setupScrub13);
+  document.querySelectorAll('[data-split="portal"]').forEach(setupPortal);
+  document.querySelectorAll('[data-split="final"]').forEach(setupFinal);
+
+  document.querySelectorAll('[data-split="magnetic"],[data-split="gravity"],[data-split="flip"],[data-split="constellation"],[data-split="final"],#exp15').forEach(el=>{
+    revealObserver.observe(el);
+  });
+}
+
+/* =========================================================================
+   AUTOPLAY / RESET CONTROLS
+   ========================================================================= */
+let autoplayTimer=null, autoplayIndex=0;
+const sectionsForAutoplay=()=>[...document.querySelectorAll("section.experiment")];
+
+document.getElementById("autoplayBtn").addEventListener("click",function(){
+  if(autoplayTimer){
+    clearInterval(autoplayTimer); autoplayTimer=null;
+    this.textContent="Auto Play";
+    return;
+  }
+  this.textContent="Pause";
+  const sections=sectionsForAutoplay();
+  autoplayIndex=0;
+  autoplayTimer=setInterval(()=>{
+    if(autoplayIndex>=sections.length){
+      clearInterval(autoplayTimer); autoplayTimer=null;
+      document.getElementById("autoplayBtn").textContent="Auto Play";
+      return;
+    }
+    sections[autoplayIndex].scrollIntoView({behavior:"smooth",block:"start"});
+    autoplayIndex++;
+  },3200);
+});
+
+document.getElementById("resetBtn").addEventListener("click",function(){
+  if(autoplayTimer){ clearInterval(autoplayTimer); autoplayTimer=null; document.getElementById("autoplayBtn").textContent="Auto Play"; }
+  window.scrollTo({top:0,behavior:"smooth"});
+  document.querySelectorAll(".is-visible").forEach(el=>{
+    el.classList.remove("is-visible");
+    revealObserver.observe(el);
+  });
+});
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+document.addEventListener("DOMContentLoaded",()=>{
+  initAll();
+  if(AccessibilityManager.reduced){
+    document.querySelectorAll("[data-reveal], .exp-heading").forEach(el=>el.classList.add("is-visible"));
+  }
+  ScrollEngine.start();
+});
+})();
+</script>
+</body>
+</html>

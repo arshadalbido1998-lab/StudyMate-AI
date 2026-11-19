@@ -1,0 +1,463 @@
+.mind-map-section,
+.mind-map-shell,
+.mind-map-main {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: #000;
+}
+
+.mind-map-section {
+  color: #fff;
+}
+
+.mind-map-main {
+  position: relative;
+  overflow: hidden;
+}
+
+.mind-map-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0 1rem 5.5rem;
+  color: #fff;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+  font-weight: 500;
+  letter-spacing: -.025em;
+  text-align: center;
+  pointer-events: none;
+}
+
+.mind-map-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  overscroll-behavior: contain;
+}
+
+.mind-map-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.mind-map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  user-select: none;
+}
+
+.mind-map-transform {
+  transition: transform .12s ease-out;
+}
+
+.mind-map-viewport.is-dragging .mind-map-transform {
+  transition: none;
+}
+
+.mind-map-link {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.mind-map-link--hierarchy {
+  opacity: .7;
+}
+
+.mind-map-link--related {
+  stroke-dasharray: 6 7;
+}
+
+.mind-map-node-wrap {
+  overflow: visible;
+}
+
+.mind-map-node {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #fff;
+  border-radius: .8rem;
+  background: #000;
+  padding: .7rem .85rem;
+  color: #fff;
+  text-align: left;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.mind-map-node:hover,
+.mind-map-node.is-selected {
+  background: #fff;
+  color: #000;
+}
+
+.mind-map-node:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.mind-map-node.is-dragging {
+  cursor: grabbing;
+}
+
+.mind-map-node__kind {
+  margin-bottom: .2rem;
+  color: inherit;
+  font-size: .58rem;
+  font-weight: 650;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.mind-map-node strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: inherit;
+  font-size: .84rem;
+  font-weight: 650;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.mind-map-node__description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: .25rem;
+  color: inherit;
+  font-size: .7rem;
+  line-height: 1.4;
+  opacity: .78;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.mind-map-controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.mind-map-controls button {
+  display: grid;
+  min-width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.mind-map-controls button:hover {
+  background: #fff;
+  color: #000;
+}
+
+.mind-map-controls > span {
+  min-width: 3.2rem;
+  color: #fff;
+  font-size: .72rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.mind-map-controls .mind-map-fit {
+  display: inline-flex;
+  min-width: 0;
+  padding: 0 .85rem;
+  font-size: .72rem;
+}
+
+.mind-map-selection {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  width: min(22rem, calc(100% - 12rem));
+  color: #fff;
+  font-size: .72rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.mind-map-selection span {
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.mind-map-selection p {
+  margin: .35rem 0 0;
+}
+
+.mind-map-composer {
+  position: absolute;
+  right: 1rem;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 1rem;
+  z-index: 3;
+  width: min(100% - 2rem, 48rem);
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 1.65rem;
+  background: #000;
+  padding: .55rem .65rem;
+}
+
+.mind-map-file-input {
+  display: none;
+}
+
+.mind-map-file-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .65rem;
+  padding: .1rem .5rem .45rem;
+  color: #fff;
+  font-size: .75rem;
+}
+
+.mind-map-file-name > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mind-map-composer__row {
+  display: flex;
+  align-items: flex-end;
+  gap: .45rem;
+}
+
+.mind-map-attach,
+.mind-map-send {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mind-map-attach {
+  background: #000;
+  color: #fff;
+}
+
+.mind-map-attach:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
+}
+
+.mind-map-attach svg,
+.mind-map-send svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.mind-map-composer textarea {
+  min-width: 0;
+  min-height: 2.45rem;
+  max-height: 10rem;
+  flex: 1;
+  resize: none;
+  overflow-y: auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: .45rem .1rem;
+  color: #fff;
+  font: inherit;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.mind-map-send {
+  background: #fff;
+  color: #000;
+}
+
+.mind-map-send:hover:not(:disabled) {
+  background: #000;
+  outline: 1px solid #fff;
+  color: #fff;
+}
+
+.mind-map-send:disabled,
+.mind-map-attach:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.mind-map-send__spinner,
+.mind-map-spinner {
+  display: block;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: mind-map-spin .8s linear infinite;
+}
+
+.mind-map-send__spinner {
+  width: 1rem;
+  height: 1rem;
+}
+
+.mind-map-spinner {
+  width: 2rem;
+  height: 2rem;
+}
+
+.mind-map-progress {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 2rem 1rem 7rem;
+  color: #fff;
+  text-align: center;
+}
+
+.mind-map-progress p {
+  margin: 0;
+  font-size: .85rem;
+  line-height: 1.45;
+}
+
+.mind-map-progress-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .35rem 1rem;
+  margin: .5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: .72rem;
+}
+
+.mind-map-progress-steps li {
+  opacity: .55;
+}
+
+.mind-map-progress-steps li.is-active,
+.mind-map-progress-steps li.is-complete {
+  opacity: 1;
+}
+
+.mind-map-stop {
+  min-height: 2.4rem;
+  margin-top: .55rem;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: #000;
+  padding: .4rem .9rem;
+  color: #fff;
+  font: inherit;
+  font-size: .75rem;
+  cursor: pointer;
+}
+
+.mind-map-stop:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
+}
+
+.mind-map-stop:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.mind-map-feedback {
+  position: absolute;
+  bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 5.5rem);
+  left: 50%;
+  z-index: 4;
+  width: min(48rem, calc(100% - 2rem));
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: .78rem;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+}
+
+.mind-map-feedback p {
+  margin: .3rem 0;
+}
+
+@keyframes mind-map-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .mind-map-controls {
+    top: .65rem;
+    right: .65rem;
+  }
+
+  .mind-map-selection {
+    top: .65rem;
+    left: .65rem;
+    width: min(12rem, calc(100% - 11rem));
+  }
+
+  .mind-map-controls button {
+    min-width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .mind-map-controls .mind-map-fit {
+    padding: 0 .65rem;
+  }
+
+  .mind-map-composer {
+    right: .5rem;
+    bottom: max(.65rem, env(safe-area-inset-bottom));
+    left: .5rem;
+    width: calc(100% - 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mind-map-transform,
+  .mind-map-spinner,
+  .mind-map-send__spinner {
+    animation: none;
+    transition: none;
+  }
+}

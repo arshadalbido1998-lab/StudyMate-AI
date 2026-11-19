@@ -1,0 +1,221 @@
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.68);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.profile-dialog {
+  position: relative;
+  width: min(100%, 29rem);
+  padding: clamp(1.5rem, 6vw, 2.25rem);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 1.35rem;
+  background: rgba(0, 0, 0, 0.97);
+  box-shadow: none;
+  color: #fff;
+}
+
+.profile-dialog__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.profile-dialog__eyebrow {
+  color: #fff;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.profile-dialog h2 {
+  margin-top: .55rem;
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  letter-spacing: -.055em;
+}
+
+.profile-dialog__identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.6rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.profile-dialog__avatar {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.16);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.profile-dialog__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-dialog__identity-copy {
+  display: grid;
+  min-width: 0;
+  gap: .28rem;
+}
+
+.profile-dialog__identity-copy strong,
+.profile-dialog__identity-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-dialog__identity-copy strong {
+  font-size: .95rem;
+}
+
+.profile-dialog__identity-copy span {
+  color: rgba(255, 255, 255, 0.53);
+  font-size: .78rem;
+}
+
+.profile-dialog__form {
+  display: grid;
+  gap: .6rem;
+  margin-top: 1.6rem;
+}
+
+.profile-dialog__form label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.profile-dialog__input-row {
+  display: flex;
+  gap: .6rem;
+}
+
+.profile-dialog__input-row input {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0 .85rem;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: .75rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: #fff;
+  font: inherit;
+  font-size: .86rem;
+}
+
+.profile-dialog__input-row input:focus {
+  border-color: rgba(255, 255, 255, 0.8);
+  outline: none;
+}
+
+.profile-dialog__input-row button,
+.profile-dialog__logout {
+  min-height: 3rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: .75rem;
+  background: #000;
+  color: #000;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-dialog__input-row button:disabled,
+.profile-dialog__logout:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.profile-dialog__message {
+  margin-top: .55rem;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.profile-dialog__message--error {
+  color: #fff;
+}
+
+.profile-dialog__message--success {
+  color: #fff;
+}
+
+.profile-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.profile-dialog__footer > span {
+  max-width: 13rem;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.profile-dialog__footer > .profile-dialog__message {
+  flex-basis: 100%;
+}
+
+.profile-dialog__logout {
+  min-height: 2.65rem;
+  flex: 0 0 auto;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.12);
+  color: #fff;
+}
+
+@media (max-width: 420px) {
+  .profile-dialog__input-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-dialog__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-dialog__footer > span {
+    max-width: none;
+  }
+}
